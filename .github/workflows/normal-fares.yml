@@ -11,6 +11,15 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
+    env:
+      NODE_ENV: production
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DATABASE_AUTH_TOKEN: ${{ secrets.DATABASE_AUTH_TOKEN }}
+      SERPAPI_API_KEY: ${{ secrets.SERPAPI_API_KEY }}
+      SCRAPERAPI_KEY: ${{ secrets.SCRAPERAPI_KEY }}
+      DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+      RSS_FEED_URLS: ${{ secrets.RSS_FEED_URLS }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -27,14 +36,8 @@ jobs:
       - name: Build project
         run: npm run build
 
+      - name: Sync tracked destinations (deactivate others, apply repo list)
+        run: npm run sync:tracked-destinations
+
       - name: Run normal fares scanner
-        env:
-          NODE_ENV: production
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          DATABASE_AUTH_TOKEN: ${{ secrets.DATABASE_AUTH_TOKEN }}
-          SERPAPI_API_KEY: ${{ secrets.SERPAPI_API_KEY }}
-          SCRAPERAPI_KEY: ${{ secrets.SCRAPERAPI_KEY }}
-          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
-          # RSS_FEED_URLS required by env schema (unused by this job); use a placeholder feed if needed.
-          RSS_FEED_URLS: ${{ secrets.RSS_FEED_URLS }}
         run: npm run job:normal-fares

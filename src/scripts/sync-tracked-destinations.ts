@@ -22,17 +22,34 @@ interface SyncTrackedDestinationRow {
 
 const trackedRows: SyncTrackedDestinationRow[] = [
   {
-    id: "tpe-nrt-hnd-rt-econ-202607",
+    id: "tpe-tas-skd-bhk-rt-econ-202702",
     originAirportCode: "TPE",
-    destinationAirportCode: "NRT,HND",
-    destinationCity: "Tokyo",
+    destinationAirportCode: "TAS,SKD,BHK",
+    destinationCity: "Tashkent / Samarkand / Bukhara",
+    destinationCountry: "Uzbekistan",
+    tripType: "round_trip",
+    cabinClass: "economy",
+    departureDateFrom: "2027-02-04",
+    departureDateTo: "2027-02-13",
+    returnDateFrom: "2027-02-18",
+    returnDateTo: "2027-03-05",
+    maxStops: 1,
+    currencyCode: "TWD",
+    locale: "zh-TW",
+    isActive: 1
+  },
+  {
+    id: "tpe-oka-rt-econ-202612",
+    originAirportCode: "TPE",
+    destinationAirportCode: "OKA",
+    destinationCity: "Okinawa (Naha)",
     destinationCountry: "Japan",
     tripType: "round_trip",
     cabinClass: "economy",
-    departureDateFrom: "2026-07-01",
-    departureDateTo: "2026-07-10",
-    returnDateFrom: "2026-07-20",
-    returnDateTo: "2026-07-30",
+    departureDateFrom: "2026-12-25",
+    departureDateTo: "2026-12-28",
+    returnDateFrom: "2026-12-29",
+    returnDateTo: "2027-01-05",
     maxStops: 1,
     currencyCode: "TWD",
     locale: "zh-TW",
@@ -43,6 +60,13 @@ const trackedRows: SyncTrackedDestinationRow[] = [
 async function main(): Promise<void> {
   const env = loadEnvironment();
   const client = createTursoClient(getTursoConnectionConfig(env));
+
+  await client.execute(`
+    UPDATE tracked_destinations
+    SET is_active = 0,
+        updated_at = CURRENT_TIMESTAMP
+  `);
+  console.log("[tracked-destinations-sync] deactivated all existing rows");
 
   const beforeResult = await client.execute(`
     SELECT
