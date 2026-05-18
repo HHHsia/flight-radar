@@ -57,16 +57,33 @@ const trackedRows: SyncTrackedDestinationRow[] = [
   }
 ];
 
+function formatSyncDateWindow(row: SyncTrackedDestinationRow): string {
+  const dep = `${row.departureDateFrom ?? "?"}..${row.departureDateTo ?? "?"}`;
+  if (row.tripType === "one_way") {
+    return `dep ${dep}`;
+  }
+
+  return `dep ${dep} ret ${row.returnDateFrom ?? "?"}..${row.returnDateTo ?? "?"}`;
+}
+
 async function main(): Promise<void> {
+  const jobStartedAt = Date.now();
+  console.info(
+    `[tracked-destinations-sync] start trackedRows=${trackedRows.length} at=${new Date().toISOString()}`
+  );
+
   const env = loadEnvironment();
   const client = createTursoClient(getTursoConnectionConfig(env));
 
+  const deactivateStartedAt = Date.now();
   await client.execute(`
     UPDATE tracked_destinations
     SET is_active = 0,
         updated_at = CURRENT_TIMESTAMP
   `);
-  console.log("[tracked-destinations-sync] deactivated all existing rows");
+  console.log(
+    `[tracked-destinations-sync] deactivated all existing rows (${Date.now() - deactivateStartedAt}ms)`
+  );
 
   const beforeResult = await client.execute(`
     SELECT
@@ -89,7 +106,14 @@ async function main(): Promise<void> {
     );
   }
 
-  for (const row of trackedRows) {
+  for (let index = 0; index < trackedRows.length; index++) {
+    const row = trackedRows[index]!;
+    const rowStartedAt = Date.now();
+    console.info(
+      `[tracked-destinations-sync] upsert ${index + 1}/${trackedRows.length} id=${row.id} ` +
+        `${row.originAirportCode}->${row.destinationAirportCode} ${formatSyncDateWindow(row)}`
+    );
+
     await client.execute({
       sql: `
         INSERT INTO tracked_destinations (
@@ -146,6 +170,10 @@ async function main(): Promise<void> {
         row.isActive
       ]
     });
+
+    console.info(
+      `[tracked-destinations-sync] upsert ok id=${row.id} ${Date.now() - rowStartedAt}ms`
+    );
   }
 
   const afterResult = await client.execute(`
@@ -172,6 +200,9 @@ async function main(): Promise<void> {
   }
 
   await client.close();
+  console.info(
+    `[tracked-destinations-sync] done total_elapsed=${Date.now() - jobStartedAt}ms at=${new Date().toISOString()}`
+  );
 }
 
 void main().catch((error) => {

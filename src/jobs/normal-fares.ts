@@ -24,12 +24,31 @@ export interface NormalFaresJobDeps {
 
 export async function runNormalFaresJob(deps: NormalFaresJobDeps): Promise<void> {
   const destinations = await deps.repository.listActiveTrackedDestinations();
+  console.info(
+    `[normal-fares] loaded ${destinations.length} active destination(s) at=${new Date().toISOString()}`
+  );
 
   for (const destination of destinations) {
+    const destinationStartedAt = Date.now();
     const searchDestinations = buildSearchDestinations(destination);
+    console.info(
+      `[normal-fares] destination ${destination.id} ${destination.originAirportCode}->${destination.destinationAirportCode} ` +
+        `search_variants=${searchDestinations.length}`
+    );
 
     for (const searchDestination of searchDestinations) {
+      const serpStartedAt = Date.now();
+      console.info(
+        `[normal-fares] serpapi start ${destination.id} query_origin=${searchDestination.originAirportCode}`
+      );
+
       const results = await deps.serpApiClient.searchFlights(searchDestination);
+
+      console.info(
+        `[normal-fares] serpapi done ${destination.id} query_origin=${searchDestination.originAirportCode} ` +
+          `${Date.now() - serpStartedAt}ms raw_results=${results.length}`
+      );
+
       const filteredResults = results.filter((result) =>
         matchesTargetOriginAirport(result, destination.originAirportCode)
       );
@@ -80,7 +99,13 @@ export async function runNormalFaresJob(deps: NormalFaresJobDeps): Promise<void>
         });
       }
     }
+
+    console.info(
+      `[normal-fares] destination complete ${destination.id} elapsed=${Date.now() - destinationStartedAt}ms`
+    );
   }
+
+  console.info(`[normal-fares] job complete processed ${destinations.length} destination(s)`);
 }
 
 function buildSearchDestinations(destination: TrackedDestination): TrackedDestination[] {

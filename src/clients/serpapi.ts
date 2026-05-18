@@ -58,16 +58,21 @@ export function createSerpApiClient(config: SerpApiClientConfig): SerpApiClient 
       const slices = buildFlexibleSerpApiDateSlices(destination);
       const effectiveSlices = slices.length > 0 ? slices : [undefined];
 
-      if (effectiveSlices.length > 1) {
+      const totalSlices = effectiveSlices.length;
+      if (totalSlices > 1) {
         console.info(
-          `[serpapi] flexible date search: ${effectiveSlices.length} slice(s) for destination ${destination.id}`
+          `[serpapi] flexible date search: ${totalSlices} slice(s) for destination ${destination.id} (sequential SerpApi calls; progress logs follow)`
         );
       }
 
       const merged: SerpApiFlightResult[] = [];
 
-      for (const slice of effectiveSlices) {
+      for (let index = 0; index < effectiveSlices.length; index++) {
+        const slice = effectiveSlices[index];
         const requestUrl = buildSerpApiUrl(destination, config, slice);
+        const sliceLabel = formatSliceLabelForLogs(destination, slice);
+        const startedAt = Date.now();
+
         const response = await fetchImpl(requestUrl, {
           method: "GET",
           headers: {
@@ -83,7 +88,15 @@ export function createSerpApiClient(config: SerpApiClientConfig): SerpApiClient 
         }
 
         const payload = (await response.json()) as SerpApiSearchResponse;
-        merged.push(...parseSerpApiSearchResponse(payload));
+        const batch = parseSerpApiSearchResponse(payload);
+        merged.push(...batch);
+
+        if (totalSlices > 1) {
+          const elapsedMs = Date.now() - startedAt;
+          console.info(
+            `[serpapi] slice ${index + 1}/${totalSlices} ${destination.id} ${sliceLabel} ${elapsedMs}ms batch_flights=${batch.length} merged=${merged.length}`
+          );
+        }
       }
 
       return dedupeSerpApiFlightResults(merged);
@@ -330,6 +343,16 @@ function buildSerpApiResultDedupeKey(result: SerpApiFlightResult): string {
 
 function redactSerpApiUrlForLogs(url: string): string {
   return url.replace(/api_key=[^&]+/u, "api_key=REDACTED");
+}
+
+function formatSliceLabelForLogs(destination: TrackedDestination, slice: SerpApiDateSlice | undefined): string {
+  const outbound = slice?.outboundDate ?? destination.departureDateFrom ?? "?";
+  if (destination.tripType !== "round_trip") {
+    return `outbound=${outbound}`;
+  }
+
+  const ret = slice?.returnDate ?? destination.returnDateFrom ?? "?";
+  return `outbound=${outbound} return=${ret}`;
 }
 
 function normalizeSerpApiFlightResult(payload: unknown): unknown {

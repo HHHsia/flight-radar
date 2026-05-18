@@ -19,6 +19,7 @@ interface SeedTrackedDestinationRow {
   locale: string;
 }
 
+// 與 sync-tracked-destinations.ts 的 trackedRows 保持一致，避免本機 seed 與 CI sync 結果不一致。
 const seedRows: SeedTrackedDestinationRow[] = [
   {
     id: "tpe-tas-skd-bhk-rt-econ-202702",
@@ -54,12 +55,33 @@ const seedRows: SeedTrackedDestinationRow[] = [
   }
 ];
 
+function formatDateWindow(row: SeedTrackedDestinationRow): string {
+  const dep = `${row.departureDateFrom ?? "?"}..${row.departureDateTo ?? "?"}`;
+  if (row.tripType === "one_way") {
+    return `dep ${dep}`;
+  }
+
+  return `dep ${dep} ret ${row.returnDateFrom ?? "?"}..${row.returnDateTo ?? "?"}`;
+}
+
 async function main(): Promise<void> {
+  const jobStartedAt = Date.now();
+  console.info(
+    `[seed-tracked-destinations] start rows=${seedRows.length} at=${new Date().toISOString()}`
+  );
+
   const env = loadEnvironment();
   const client = createTursoClient(getTursoConnectionConfig(env));
   const repository = createTursoRepository(client);
 
-  for (const row of seedRows) {
+  for (let index = 0; index < seedRows.length; index++) {
+    const row = seedRows[index]!;
+    const rowStartedAt = Date.now();
+    console.info(
+      `[seed-tracked-destinations] upsert ${index + 1}/${seedRows.length} id=${row.id} ` +
+        `${row.originAirportCode}->${row.destinationAirportCode} ${formatDateWindow(row)}`
+    );
+
     await client.execute({
       sql: `
         INSERT OR REPLACE INTO tracked_destinations (
@@ -98,9 +120,15 @@ async function main(): Promise<void> {
         row.locale
       ]
     });
+
+    console.info(
+      `[seed-tracked-destinations] upsert ok id=${row.id} ${Date.now() - rowStartedAt}ms`
+    );
   }
 
+  const listStartedAt = Date.now();
   const activeDestinations = await repository.listActiveTrackedDestinations();
+  console.info(`[seed-tracked-destinations] listActiveTrackedDestinations ${Date.now() - listStartedAt}ms`);
 
   console.log(`[seed-tracked-destinations] inserted or updated ${seedRows.length} rows`);
   console.log(`[seed-tracked-destinations] active tracked destinations: ${activeDestinations.length}`);
@@ -112,6 +140,9 @@ async function main(): Promise<void> {
   }
 
   await client.close();
+  console.info(
+    `[seed-tracked-destinations] done total_elapsed=${Date.now() - jobStartedAt}ms at=${new Date().toISOString()}`
+  );
 }
 
 void main().catch((error) => {

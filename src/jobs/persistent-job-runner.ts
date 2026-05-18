@@ -40,6 +40,7 @@ export function createPersistentJobRunner(options: PersistentJobRunnerOptions): 
       );
 
       try {
+        logger.info(`[jobs] entering ${options.runner.name} job body at=${new Date().toISOString()}`);
         await options.runner.run();
         const finishedAt = new Date().toISOString();
         await options.repository.completeJobLease({

@@ -1,8 +1,15 @@
 name: Normal Fares Scanner
 
+# 航線清單須與 src/scripts/sync-tracked-destinations.ts、seed-tracked-destinations.ts 的列一致；
+# 每次執行會先 npm run sync:tracked-destinations，再掃描下列啟用中的追蹤目的地。
+#
+# 目前追蹤（經濟艙、來回、TWD、zh-TW、max_stops=1）：
+#   - tpe-tas-skd-bhk-rt-econ-202702  TPE -> TAS,SKD,BHK  去 2027-02-04～2027-02-13  回 2027-02-18～2027-03-05
+#   - tpe-oka-rt-econ-202612          TPE -> OKA         去 2026-12-25～2026-12-28  回 2026-12-29～2027-01-05
+#
 on:
   schedule:
-    # 每 12 小時執行一次 (UTC 00:00 和 12:00)
+    # 每 12 小時：UTC 00:00、12:00（台灣時間 08:00、20:00，全年 UTC+8）
     - cron: '0 0,12 * * *'
   workflow_dispatch: # 允許手動觸發
 
