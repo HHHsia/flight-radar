@@ -38,6 +38,22 @@ const seedRows: SeedTrackedDestinationRow[] = [
     locale: "zh-TW"
   },
   {
+    id: "icn-tas-skd-bhk-rt-econ-202702",
+    originAirportCode: "ICN",
+    destinationAirportCode: "TAS,SKD,BHK",
+    destinationCity: "Tashkent / Samarkand / Bukhara",
+    destinationCountry: "Uzbekistan",
+    tripType: "round_trip",
+    cabinClass: "economy",
+    departureDateFrom: "2027-02-03",
+    departureDateTo: "2027-02-04",
+    returnDateFrom: "2027-02-13",
+    returnDateTo: "2027-02-14",
+    maxStops: 1,
+    currencyCode: "TWD",
+    locale: "zh-TW"
+  },
+  {
     id: "tpe-svo-dme-vko-rt-econ-202702",
     originAirportCode: "TPE",
     destinationAirportCode: "SVO,DME,VKO",

@@ -5,6 +5,7 @@ name: Normal Fares Scanner
 #
 # 目前追蹤（經濟艙、來回、TWD、zh-TW、max_stops=1）：
 #   - tpe-tas-skd-bhk-rt-econ-202702  TPE -> TAS,SKD,BHK  去 2027-02-03～2027-02-04  回 2027-02-13～2027-02-14
+#   - icn-tas-skd-bhk-rt-econ-202702  ICN -> TAS,SKD,BHK  去 2027-02-03～2027-02-04  回 2027-02-13～2027-02-14
 #   - tpe-svo-dme-vko-rt-econ-202702  TPE -> SVO,DME,VKO  去 2027-02-03～2027-02-04  回 2027-02-13～2027-02-14
 #   - tpe-oka-rt-econ-202612          TPE -> OKA         去 2026-12-24～2026-12-25  回 2026-12-27～2026-12-28
 #
